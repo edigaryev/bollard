@@ -16,6 +16,7 @@ use http::request::Builder;
 use hyper::client::HttpConnector;
 use hyper::rt::Future;
 use hyper::{self, Body, Chunk, Client, Request, Response, StatusCode};
+use hyper_mock::HostToReplyConnector;
 #[cfg(feature = "openssl")]
 use hyper_openssl::HttpsConnector;
 use hyper_tls;
@@ -43,9 +44,6 @@ use uri::Uri;
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use serde_json;
-
-#[cfg(test)]
-use hyper_mock::HostToReplyConnector;
 
 /// The default `DOCKER_SOCKET` address that we will try to connect to.
 #[cfg(unix)]
@@ -118,7 +116,6 @@ pub(crate) enum Transport {
     NamedPipe {
         client: Client<NamedPipeConnector>,
     },
-    #[cfg(test)]
     HostToReply {
         client: Client<HostToReplyConnector>,
     },
@@ -135,7 +132,6 @@ impl fmt::Debug for Transport {
             Transport::Unix { .. } => write!(f, "Unix"),
             #[cfg(windows)]
             Transport::NamedPipe { .. } => write!(f, "NamedPipe"),
-            #[cfg(test)]
             Transport::HostToReply { .. } => write!(f, "HostToReply"),
         }
     }
@@ -705,10 +701,7 @@ impl Docker {
 
         Ok(docker)
     }
-}
 
-#[cfg(test)]
-impl Docker {
     /// Connect using the `HostToReplyConnector`.
     ///
     /// This connector is used to test the Docker client api.
@@ -735,12 +728,12 @@ impl Docker {
     /// connector.content.push(
     ///   "HTTP/1.1 200 OK\r\nServer: mock1\r\nContent-Type: application/json\r\nContent-Length: 0\r\n\r\n".to_string()
     /// );
-    /// let connection = Docker::connect_with(connector, String::new(), 5).unwrap();
+    /// let connection = Docker::connect_with_host_to_reply(connector, String::new(), 5).unwrap();
     /// connection.ping()
     ///   .and_then(|_| Ok(println!("Connected!")));
     /// # }
     /// ```
-    pub(crate) fn connect_with_host_to_reply(
+    pub fn connect_with_host_to_reply(
         connector: HostToReplyConnector,
         client_addr: String,
         timeout: u64,
@@ -996,7 +989,6 @@ impl Docker {
             Transport::Unix { ref client } => client.request(request),
             #[cfg(windows)]
             Transport::NamedPipe { ref client } => client.request(request),
-            #[cfg(test)]
             Transport::HostToReply { ref client } => client.request(request),
         };
         Timeout::new_at(request, now + Duration::from_secs(timeout)).from_err()

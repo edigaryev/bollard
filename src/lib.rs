@@ -404,6 +404,7 @@ extern crate tokio_timer;
 extern crate url;
 #[cfg(windows)]
 extern crate winapi;
+extern crate yup_hyper_mock as hyper_mock;
 
 // declare modules
 pub mod auth;
@@ -419,9 +420,6 @@ mod options;
 mod read;
 pub mod system;
 mod uri;
-
-#[cfg(test)]
-extern crate yup_hyper_mock as hyper_mock;
 
 // publicly re-export
 pub use docker::{Docker, DockerChain};
